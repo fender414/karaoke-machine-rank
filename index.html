@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カラオケ大会 ランキング</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Rubik:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --stage-1:#170508;
+    --stage-2:#3a0e14;
+    --stage-3:#1a0a12;
+    --card-bg:#211f36;
+    --card-bg-soft:#26233c;
+    --card-border:#332f52;
+    --gold:#f6b93b;
+    --gold-bright:#ffd876;
+    --text-primary:#f6f2ea;
+    --text-muted:#a29dc2;
+    --danger:#e0607a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    font-family:"Noto Sans JP",sans-serif;
+    color:var(--text-primary);
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(246,185,59,0.10), transparent 55%),
+      linear-gradient(160deg, var(--stage-1) 0%, var(--stage-2) 45%, var(--stage-3) 100%);
+    padding:28px 20px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+    border-bottom:1px solid rgba(246,185,59,0.25);
+    padding-bottom:16px;
+  }
+  .title-eyebrow{
+    font-size:12px;
+    letter-spacing:0.35em;
+    color:var(--gold);
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  h1{
+    margin:0;
+    font-size:clamp(24px,3.6vw,34px);
+    font-weight:900;
+    letter-spacing:0.02em;
+  }
+  .count-badge{
+    font-family:"Rubik",sans-serif;
+    font-weight:700;
+    font-size:15px;
+    color:var(--text-muted);
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--card-border);
+    padding:8px 14px;
+    border-radius:999px;
+  }
+  .count-badge b{color:var(--gold-bright);font-size:17px;}
+
+  .entry-panel{
+    background:linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    padding:16px 18px;
+    margin-bottom:28px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.25);
+  }
+  .entry-panel-label{
+    font-size:11px;
+    letter-spacing:0.2em;
+    color:var(--gold);
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  .entry-form{
+    display:grid;
+    grid-template-columns:1.1fr 1.6fr 0.7fr auto;
+    gap:10px;
+  }
+  @media (max-width:720px){
+    .entry-form{grid-template-columns:1fr;}
+  }
+  .entry-form input{
+    width:100%;
+    background:rgba(0,0,0,0.28);
+    border:1px solid var(--card-border);
+    border-radius:10px;
+    padding:12px 14px;
+    color:var(--text-primary);
+    font-size:15px;
+    font-family:inherit;
+    outline:none;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .entry-form input::placeholder{color:#6f6a8c;}
+  .entry-form input:focus{border-color:var(--gold);background:rgba(0,0,0,0.4);}
+  .entry-form input[type="number"]{font-family:"Rubik",sans-serif;font-weight:600;}
+  #addBtn{
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+    color:#241505;
+    border:none;
+    border-radius:10px;
+    padding:0 26px;
+    font-weight:800;
+    font-size:15px;
+    cursor:pointer;
+    letter-spacing:0.03em;
+    transition:filter .15s ease, transform .1s ease;
+  }
+  #addBtn:hover{filter:brightness(1.08);}
+  #addBtn:active{transform:scale(0.97);}
+  #addBtn:disabled{
+    background:#3a3752;
+    color:#847fa0;
+    cursor:not-allowed;
+  }
+  .form-msg{
+    font-size:12.5px;
+    color:var(--text-muted);
+    margin-top:8px;
+    min-height:16px;
+  }
+  .form-msg.limit{color:var(--danger);}
+
+  #rankGrid{
+    display:grid;
+    gap:12px;
+  }
+  #rankGrid.cols-1{grid-template-columns:1fr;}
+  #rankGrid.cols-2{grid-template-columns:1fr 1fr;}
+  #rankGrid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+  @media (max-width:900px){
+    #rankGrid.cols-2,#rankGrid.cols-3{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:600px){
+    #rankGrid.cols-1,#rankGrid.cols-2,#rankGrid.cols-3{grid-template-columns:1fr;}
+  }
+
+  .row{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:12px;
+    padding:14px 16px;
+    min-height:70px;
+  }
+  .row .rank{
+    font-family:"Rubik",sans-serif;
+    font-weight:700;
+    font-size:14px;
+    color:var(--text-muted);
+    width:20px;
+    flex-shrink:0;
+    text-align:center;
+  }
+  .row .info{flex:1;min-width:0;}
+  .row .name{
+    font-weight:700;
+    font-size:16px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .row .song{
+    font-size:12.5px;
+    color:var(--text-muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    margin-top:2px;
+  }
+  .row .song::before{content:"♪ ";}
+  .row .score{
+    font-family:"Rubik",sans-serif;
+    font-weight:800;
+    font-size:26px;
+    color:var(--gold);
+    flex-shrink:0;
+    min-width:64px;
+    text-align:right;
+  }
+  .row .del{
+    flex-shrink:0;
+    background:transparent;
+    border:none;
+    color:#6f6a8c;
+    font-size:16px;
+    cursor:pointer;
+    padding:4px 6px;
+    line-height:1;
+    border-radius:6px;
+    transition:color .15s ease, background .15s ease;
+  }
+  .row .del:hover{color:var(--danger);background:rgba(224,96,122,0.1);}
+
+  .row.first{
+    grid-column:1 / -1;
+    background:linear-gradient(180deg, rgba(246,185,59,0.14), var(--card-bg));
+    border:1px solid var(--gold);
+    padding:20px 20px;
+    min-height:88px;
+    box-shadow:0 0 0 1px rgba(246,185,59,0.15), 0 0 40px rgba(246,185,59,0.22);
+  }
+  .row.first::before{
+    content:"";
+    position:absolute;
+    inset:-1px;
+    border-radius:12px;
+    padding:1px;
+    background:conic-gradient(from 0deg, var(--gold), transparent 30%, var(--gold) 60%, transparent 90%);
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;
+    mask-composite:exclude;
+    opacity:0.55;
+    animation:spin 6s linear infinite;
+    pointer-events:none;
+  }
+  @media (prefers-reduced-motion:reduce){
+    .row.first::before{animation:none;}
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .row.first .rank{
+    font-size:26px;
+    color:var(--gold-bright);
+    width:34px;
+  }
+  .row.first .name{font-size:22px;}
+  .row.first .song{font-size:14px;}
+  .row.first .score{font-size:38px;color:var(--gold-bright);min-width:100px;}
+
+  .empty{
+    grid-column:1/-1;
+    text-align:center;
+    color:var(--text-muted);
+    padding:50px 10px;
+    font-size:14px;
+    border:1px dashed var(--card-border);
+    border-radius:14px;
+  }
+
+  footer{
+    margin-top:24px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:12px;
+  }
+  .sync-status{
+    font-size:12px;
+    color:var(--text-muted);
+  }
+  .sync-status.err{color:var(--danger);}
+  #resetBtn{
+    background:transparent;
+    border:1px solid var(--card-border);
+    color:var(--text-muted);
+    padding:8px 16px;
+    border-radius:8px;
+    font-size:12.5px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  #resetBtn:hover{color:var(--danger);border-color:var(--danger);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="title-eyebrow">つきまち KARAOKE CONTEST</div>
+      <h1>カラオケ大会 ランキング</h1>
+    </div>
+    <div class="count-badge">出場者 <b id="countNum">0</b> / 20</div>
+  </header>
+
+  <div class="entry-panel">
+    <div class="entry-panel-label">受付入力</div>
+    <div class="entry-form">
+      <input type="text" id="nameInput" placeholder="名前（例：マキケル）" maxlength="30">
+      <input type="text" id="songInput" placeholder="楽曲名（例：Man in the Mirror）" maxlength="60">
+      <input type="number" id="scoreInput" placeholder="点数" min="0" max="10000" step="1">
+      <button id="addBtn">追加する</button>
+    </div>
+    <div class="form-msg" id="formMsg"></div>
+  </div>
+
+  <div id="rankGrid" class="cols-1"></div>
+
+  <footer>
+    <span class="sync-status" id="syncStatus"></span>
+    <button id="resetBtn">全件クリア</button>
+  </footer>
+</div>
+
+<script>
+const MAX_ENTRIES = 20;
+const POLL_MS = 3000;
+let entries = [];
+
+const grid = document.getElementById('rankGrid');
+const countNum = document.getElementById('countNum');
+const nameInput = document.getElementById('nameInput');
+const songInput = document.getElementById('songInput');
+const scoreInput = document.getElementById('scoreInput');
+const addBtn = document.getElementById('addBtn');
+const formMsg = document.getElementById('formMsg');
+const resetBtn = document.getElementById('resetBtn');
+const syncStatus = document.getElementById('syncStatus');
+
+function setSyncStatus(text, isErr){
+  syncStatus.textContent = text;
+  syncStatus.classList.toggle('err', !!isErr);
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function render(){
+  const sorted = entries
+    .map((e, idx) => ({...e, _idx: idx}))
+    .sort((a,b) => b.score - a.score || a._idx - b._idx);
+
+  countNum.textContent = entries.length;
+  addBtn.disabled = entries.length >= MAX_ENTRIES;
+  formMsg.textContent = entries.length >= MAX_ENTRIES ? '上限の20名に達しました。' : '';
+  formMsg.classList.toggle('limit', entries.length >= MAX_ENTRIES);
+
+  if(sorted.length === 0){
+    grid.className = 'cols-1';
+    grid.innerHTML = '<div class="empty">まだ出場者がいません。上のフォームから登録してください。</div>';
+    return;
+  }
+
+  const n = sorted.length;
+  const cols = n <= 7 ? 1 : (n <= 14 ? 2 : 3);
+  grid.className = 'cols-' + cols;
+
+  grid.innerHTML = sorted.map((e, i) => {
+    const rank = i + 1;
+    const isFirst = rank === 1;
+    return `
+      <div class="row ${isFirst ? 'first' : ''}" data-id="${e.id}">
+        <div class="rank">${rank}</div>
+        <div class="info">
+          <div class="name">${escapeHtml(e.name)}</div>
+          <div class="song">${escapeHtml(e.song)}</div>
+        </div>
+        <div class="score">${e.score}</div>
+        <button class="del" data-id="${e.id}" title="削除">✕</button>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.del').forEach(btn => {
+    btn.addEventListener('click', () => removeEntry(btn.dataset.id));
+  });
+}
+
+async function loadFromServer(){
+  try{
+    const res = await fetch('/api/entries');
+    if(!res.ok) throw new Error('bad_status');
+    const data = await res.json();
+    entries = data.entries || [];
+    render();
+    setSyncStatus('同期済み', false);
+  }catch(e){
+    setSyncStatus('サーバーと同期できていません（通信を確認してください）', true);
+  }
+}
+
+async function addEntry(){
+  const name = nameInput.value.trim();
+  const song = songInput.value.trim();
+  const score = scoreInput.value;
+
+  if(entries.length >= MAX_ENTRIES) return;
+  if(!name || !song || score === ''){
+    formMsg.textContent = '名前・楽曲名・点数をすべて入力してください。';
+    formMsg.classList.add('limit');
+    return;
+  }
+  const scoreNum = Number(score);
+  if(isNaN(scoreNum)){
+    formMsg.textContent = '点数は数字で入力してください。';
+    formMsg.classList.add('limit');
+    return;
+  }
+
+  addBtn.disabled = true;
+  try{
+    const res = await fetch('/api/entries', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, song, score: scoreNum})
+    });
+    const data = await res.json();
+    if(!res.ok){
+      formMsg.textContent = data.error === 'limit_reached'
+        ? '上限の20名に達しました。'
+        : '追加に失敗しました。もう一度お試しください。';
+      formMsg.classList.add('limit');
+      entries = data.entries || entries;
+      render();
+      return;
+    }
+    entries = data.entries;
+    nameInput.value = '';
+    songInput.value = '';
+    scoreInput.value = '';
+    nameInput.focus();
+    render();
+    setSyncStatus('同期済み', false);
+  }catch(e){
+    formMsg.textContent = '通信に失敗しました。電波状況を確認して再度お試しください。';
+    formMsg.classList.add('limit');
+    setSyncStatus('サーバーと同期できていません（通信を確認してください）', true);
+  }finally{
+    addBtn.disabled = entries.length >= MAX_ENTRIES;
+  }
+}
+
+async function removeEntry(id){
+  try{
+    const res = await fetch('/api/entries/' + encodeURIComponent(id), {method: 'DELETE'});
+    const data = await res.json();
+    entries = data.entries || entries;
+    render();
+  }catch(e){
+    setSyncStatus('サーバーと同期できていません（通信を確認してください）', true);
+  }
+}
+
+addBtn.addEventListener('click', addEntry);
+[nameInput, songInput, scoreInput].forEach(inp => {
+  inp.addEventListener('keydown', (ev) => {
+    if(ev.key === 'Enter'){
+      ev.preventDefault();
+      addEntry();
+    }
+  });
+});
+
+resetBtn.addEventListener('click', async () => {
+  if(!confirm('全員のデータを削除します。よろしいですか？')) return;
+  try{
+    const res = await fetch('/api/reset', {method: 'POST'});
+    const data = await res.json();
+    entries = data.entries || [];
+    render();
+  }catch(e){
+    setSyncStatus('サーバーと同期できていません（通信を確認してください）', true);
+  }
+});
+
+// 他の端末からの追加・削除を数秒おきに反映する
+// 入力中のテキストボックスはこのポーリングでは触らないので、
+// 入力していても消えたり止まったりしない
+setInterval(loadFromServer, POLL_MS);
+
+loadFromServer();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 {
 	"name": "karaoke-machine-rank",
-	"compatibility_date": "2026-08-23",
+	"compatibility_date": "2026-08-20",
 	"main": "./worker/index.js",
 	"assets": {
 		"directory": "./public/"

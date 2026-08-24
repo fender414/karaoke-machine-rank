@@ -8,16 +8,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Rubik:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --stage-1:#170508;
-    --stage-2:#3a0e14;
-    --stage-3:#1a0a12;
-    --card-bg:#211f36;
-    --card-bg-soft:#26233c;
-    --card-border:#332f52;
+    --card-bg:rgba(28,25,46,0.72);
+    --card-border:rgba(122,113,163,0.35);
     --gold:#f6b93b;
     --gold-bright:#ffd876;
+    --silver:#c7d2e0;
+    --silver-bright:#f1f5fa;
+    --bronze:#d9884e;
+    --bronze-bright:#ffb679;
     --text-primary:#f6f2ea;
-    --text-muted:#a29dc2;
+    --text-muted:#c7c2e0;
     --danger:#e0607a;
   }
   *{box-sizing:border-box;}
@@ -26,13 +26,32 @@
     min-height:100vh;
     font-family:"Noto Sans JP",sans-serif;
     color:var(--text-primary);
-    background:
-      radial-gradient(ellipse at 50% -10%, rgba(246,185,59,0.10), transparent 55%),
-      linear-gradient(160deg, var(--stage-1) 0%, var(--stage-2) 45%, var(--stage-3) 100%);
+    position:relative;
     padding:28px 20px 60px;
+  }
+  /* Background photo + readability scrim, fixed behind content */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-2;
+    background-image:url("stage-bg.jpg");
+    background-size:cover;
+    background-position:center top;
+    background-repeat:no-repeat;
+  }
+  body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(255,190,110,0.18), transparent 55%),
+      linear-gradient(180deg, rgba(10,5,12,0.55) 0%, rgba(10,5,10,0.80) 42%, rgba(8,4,8,0.93) 100%);
   }
   .wrap{max-width:1180px;margin:0 auto;}
 
+  /* Header */
   header{
     display:flex;
     align-items:flex-end;
@@ -40,41 +59,46 @@
     gap:16px;
     flex-wrap:wrap;
     margin-bottom:22px;
-    border-bottom:1px solid rgba(246,185,59,0.25);
+    border-bottom:1px solid rgba(246,185,59,0.3);
     padding-bottom:16px;
   }
   .title-eyebrow{
     font-size:12px;
     letter-spacing:0.35em;
-    color:var(--gold);
+    color:var(--gold-bright);
     font-weight:700;
     margin-bottom:6px;
+    text-shadow:0 2px 10px rgba(0,0,0,0.5);
   }
   h1{
     margin:0;
     font-size:clamp(24px,3.6vw,34px);
     font-weight:900;
     letter-spacing:0.02em;
+    text-shadow:0 2px 14px rgba(0,0,0,0.55);
   }
   .count-badge{
     font-family:"Rubik",sans-serif;
     font-weight:700;
     font-size:15px;
     color:var(--text-muted);
-    background:rgba(255,255,255,0.04);
+    background:rgba(0,0,0,0.32);
     border:1px solid var(--card-border);
     padding:8px 14px;
     border-radius:999px;
+    backdrop-filter:blur(6px);
   }
   .count-badge b{color:var(--gold-bright);font-size:17px;}
 
+  /* Entry form */
   .entry-panel{
-    background:linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+    background:linear-gradient(180deg, rgba(20,17,34,0.65), rgba(20,17,34,0.5));
     border:1px solid var(--card-border);
     border-radius:16px;
     padding:16px 18px;
     margin-bottom:28px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.25);
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);
+    backdrop-filter:blur(10px);
   }
   .entry-panel-label{
     font-size:11px;
@@ -93,7 +117,7 @@
   }
   .entry-form input{
     width:100%;
-    background:rgba(0,0,0,0.28);
+    background:rgba(0,0,0,0.35);
     border:1px solid var(--card-border);
     border-radius:10px;
     padding:12px 14px;
@@ -103,8 +127,8 @@
     outline:none;
     transition:border-color .15s ease, background .15s ease;
   }
-  .entry-form input::placeholder{color:#6f6a8c;}
-  .entry-form input:focus{border-color:var(--gold);background:rgba(0,0,0,0.4);}
+  .entry-form input::placeholder{color:#8b84ab;}
+  .entry-form input:focus{border-color:var(--gold);background:rgba(0,0,0,0.5);}
   .entry-form input[type="number"]{font-family:"Rubik",sans-serif;font-weight:600;}
   #addBtn{
     background:linear-gradient(180deg,var(--gold-bright),var(--gold));
@@ -133,6 +157,7 @@
   }
   .form-msg.limit{color:var(--danger);}
 
+  /* Ranking grid */
   #rankGrid{
     display:grid;
     gap:12px;
@@ -157,7 +182,41 @@
     border-radius:12px;
     padding:14px 16px;
     min-height:70px;
+    backdrop-filter:blur(8px) saturate(120%);
   }
+
+  /* name + song sit side by side, song pushed to the right */
+  .row .info{
+    flex:1;
+    min-width:0;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:14px;
+  }
+  .row .name{
+    font-weight:700;
+    font-size:19px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    flex:0 1 auto;
+  }
+  .row .song{
+    font-size:15px;
+    color:var(--text-muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-align:right;
+    flex:0 1 auto;
+  }
+  .row .song::before{content:"♪ ";}
+  @media (max-width:560px){
+    .row .info{flex-direction:column;align-items:flex-start;gap:2px;}
+    .row .song{text-align:left;}
+  }
+
   .row .rank{
     font-family:"Rubik",sans-serif;
     font-weight:700;
@@ -167,37 +226,20 @@
     flex-shrink:0;
     text-align:center;
   }
-  .row .info{flex:1;min-width:0;}
-  .row .name{
-    font-weight:700;
-    font-size:16px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .row .song{
-    font-size:12.5px;
-    color:var(--text-muted);
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    margin-top:2px;
-  }
-  .row .song::before{content:"♪ ";}
   .row .score{
     font-family:"Rubik",sans-serif;
     font-weight:800;
-    font-size:26px;
+    font-size:28px;
     color:var(--gold);
     flex-shrink:0;
-    min-width:64px;
+    min-width:70px;
     text-align:right;
   }
   .row .del{
     flex-shrink:0;
     background:transparent;
     border:none;
-    color:#6f6a8c;
+    color:#8b84ab;
     font-size:16px;
     cursor:pointer;
     padding:4px 6px;
@@ -205,42 +247,90 @@
     border-radius:6px;
     transition:color .15s ease, background .15s ease;
   }
-  .row .del:hover{color:var(--danger);background:rgba(224,96,122,0.1);}
+  .row .del:hover{color:var(--danger);background:rgba(224,96,122,0.15);}
 
-  .row.first{
-    grid-column:1 / -1;
-    background:linear-gradient(180deg, rgba(246,185,59,0.14), var(--card-bg));
-    border:1px solid var(--gold);
-    padding:20px 20px;
-    min-height:88px;
-    box-shadow:0 0 0 1px rgba(246,185,59,0.15), 0 0 40px rgba(246,185,59,0.22);
+  /* Medal badge for top 3 */
+  .medal{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    font-family:"Rubik",sans-serif;
+    font-weight:800;
+    flex-shrink:0;
   }
-  .row.first::before{
-    content:"";
-    position:absolute;
-    inset:-1px;
-    border-radius:12px;
-    padding:1px;
-    background:conic-gradient(from 0deg, var(--gold), transparent 30%, var(--gold) 60%, transparent 90%);
-    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite:xor;
-    mask-composite:exclude;
-    opacity:0.55;
-    animation:spin 6s linear infinite;
-    pointer-events:none;
+
+  /* Shared hero treatment for rank 1-3: full width, no spinning parts */
+  .row.first, .row.second, .row.third{
+    grid-column:1 / -1;
+  }
+
+  /* 1st place */
+  .row.first{
+    background:linear-gradient(135deg, rgba(246,185,59,0.22), rgba(28,25,46,0.78));
+    border:1px solid var(--gold);
+    padding:22px 24px;
+    min-height:96px;
+    animation:glowGold 2.6s ease-in-out infinite;
+  }
+  .row.first .medal{
+    width:56px;height:56px;font-size:26px;color:#241505;
+    background:radial-gradient(circle at 35% 30%, var(--gold-bright), var(--gold) 70%);
+    box-shadow:0 0 20px rgba(246,185,59,0.6), inset 0 2px 4px rgba(255,255,255,0.45);
+  }
+  .row.first .name{font-size:30px;}
+  .row.first .song{font-size:21px;}
+  .row.first .score{font-size:44px;color:var(--gold-bright);min-width:110px;}
+
+  /* 2nd place */
+  .row.second{
+    background:linear-gradient(135deg, rgba(199,210,224,0.16), rgba(28,25,46,0.78));
+    border:1px solid var(--silver);
+    padding:19px 22px;
+    min-height:86px;
+    animation:glowSilver 2.8s ease-in-out infinite;
+  }
+  .row.second .medal{
+    width:46px;height:46px;font-size:21px;color:#262b36;
+    background:radial-gradient(circle at 35% 30%, var(--silver-bright), var(--silver) 70%);
+    box-shadow:0 0 16px rgba(199,210,224,0.55), inset 0 2px 4px rgba(255,255,255,0.45);
+  }
+  .row.second .name{font-size:25px;}
+  .row.second .song{font-size:18px;}
+  .row.second .score{font-size:36px;color:var(--silver-bright);min-width:96px;}
+
+  /* 3rd place */
+  .row.third{
+    background:linear-gradient(135deg, rgba(217,136,78,0.18), rgba(28,25,46,0.78));
+    border:1px solid var(--bronze);
+    padding:19px 22px;
+    min-height:86px;
+    animation:glowBronze 3s ease-in-out infinite;
+  }
+  .row.third .medal{
+    width:46px;height:46px;font-size:21px;color:#3a1d08;
+    background:radial-gradient(circle at 35% 30%, var(--bronze-bright), var(--bronze) 70%);
+    box-shadow:0 0 16px rgba(217,136,78,0.55), inset 0 2px 4px rgba(255,255,255,0.4);
+  }
+  .row.third .name{font-size:25px;}
+  .row.third .song{font-size:18px;}
+  .row.third .score{font-size:36px;color:var(--bronze-bright);min-width:96px;}
+
+  @keyframes glowGold{
+    0%,100%{box-shadow:0 0 0 1px rgba(246,185,59,0.15), 0 0 28px rgba(246,185,59,0.22);}
+    50%{box-shadow:0 0 0 1px rgba(246,185,59,0.4), 0 0 48px rgba(246,185,59,0.42);}
+  }
+  @keyframes glowSilver{
+    0%,100%{box-shadow:0 0 0 1px rgba(199,210,224,0.12), 0 0 22px rgba(199,210,224,0.18);}
+    50%{box-shadow:0 0 0 1px rgba(199,210,224,0.32), 0 0 38px rgba(199,210,224,0.35);}
+  }
+  @keyframes glowBronze{
+    0%,100%{box-shadow:0 0 0 1px rgba(217,136,78,0.12), 0 0 22px rgba(217,136,78,0.18);}
+    50%{box-shadow:0 0 0 1px rgba(217,136,78,0.32), 0 0 38px rgba(217,136,78,0.35);}
   }
   @media (prefers-reduced-motion:reduce){
-    .row.first::before{animation:none;}
+    .row.first,.row.second,.row.third{animation:none;}
   }
-  @keyframes spin{to{transform:rotate(360deg);}}
-  .row.first .rank{
-    font-size:26px;
-    color:var(--gold-bright);
-    width:34px;
-  }
-  .row.first .name{font-size:22px;}
-  .row.first .song{font-size:14px;}
-  .row.first .score{font-size:38px;color:var(--gold-bright);min-width:100px;}
 
   .empty{
     grid-column:1/-1;
@@ -250,22 +340,15 @@
     font-size:14px;
     border:1px dashed var(--card-border);
     border-radius:14px;
+    backdrop-filter:blur(6px);
   }
 
   footer{
     margin-top:24px;
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    gap:12px;
+    text-align:right;
   }
-  .sync-status{
-    font-size:12px;
-    color:var(--text-muted);
-  }
-  .sync-status.err{color:var(--danger);}
   #resetBtn{
-    background:transparent;
+    background:rgba(0,0,0,0.25);
     border:1px solid var(--card-border);
     color:var(--text-muted);
     padding:8px 16px;
@@ -301,15 +384,15 @@
   <div id="rankGrid" class="cols-1"></div>
 
   <footer>
-    <span class="sync-status" id="syncStatus"></span>
     <button id="resetBtn">全件クリア</button>
   </footer>
 </div>
 
 <script>
+const STORAGE_KEY = 'entries';
 const MAX_ENTRIES = 20;
-const POLL_MS = 3000;
 let entries = [];
+let nextId = 1;
 
 const grid = document.getElementById('rankGrid');
 const countNum = document.getElementById('countNum');
@@ -319,17 +402,40 @@ const scoreInput = document.getElementById('scoreInput');
 const addBtn = document.getElementById('addBtn');
 const formMsg = document.getElementById('formMsg');
 const resetBtn = document.getElementById('resetBtn');
-const syncStatus = document.getElementById('syncStatus');
 
-function setSyncStatus(text, isErr){
-  syncStatus.textContent = text;
-  syncStatus.classList.toggle('err', !!isErr);
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      entries = parsed.entries || [];
+      nextId = parsed.nextId || (entries.length + 1);
+    }
+  }catch(e){
+    entries = [];
+  }
+  render();
+}
+
+function persist(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({entries, nextId}));
+  }catch(e){
+    console.error('保存に失敗しました', e);
+  }
 }
 
 function escapeHtml(str){
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+function tierClass(rank){
+  if(rank === 1) return 'first';
+  if(rank === 2) return 'second';
+  if(rank === 3) return 'third';
+  return '';
 }
 
 function render(){
@@ -348,16 +454,20 @@ function render(){
     return;
   }
 
-  const n = sorted.length;
-  const cols = n <= 7 ? 1 : (n <= 14 ? 2 : 3);
+  // column count is based on the 4th place and below, since 1st-3rd are always full width
+  const restCount = Math.max(0, sorted.length - 3);
+  const cols = restCount <= 7 ? 1 : (restCount <= 14 ? 2 : 3);
   grid.className = 'cols-' + cols;
 
   grid.innerHTML = sorted.map((e, i) => {
     const rank = i + 1;
-    const isFirst = rank === 1;
+    const tier = tierClass(rank);
+    const rankMarkup = tier
+      ? `<div class="medal">${rank}</div>`
+      : `<div class="rank">${rank}</div>`;
     return `
-      <div class="row ${isFirst ? 'first' : ''}" data-id="${e.id}">
-        <div class="rank">${rank}</div>
+      <div class="row ${tier}" data-id="${e.id}">
+        ${rankMarkup}
         <div class="info">
           <div class="name">${escapeHtml(e.name)}</div>
           <div class="song">${escapeHtml(e.song)}</div>
@@ -369,24 +479,11 @@ function render(){
   }).join('');
 
   grid.querySelectorAll('.del').forEach(btn => {
-    btn.addEventListener('click', () => removeEntry(btn.dataset.id));
+    btn.addEventListener('click', () => removeEntry(Number(btn.dataset.id)));
   });
 }
 
-async function loadFromServer(){
-  try{
-    const res = await fetch('/api/entries');
-    if(!res.ok) throw new Error('bad_status');
-    const data = await res.json();
-    entries = data.entries || [];
-    render();
-    setSyncStatus('同期済み', false);
-  }catch(e){
-    setSyncStatus('サーバーと同期できていません（通信を確認してください）', true);
-  }
-}
-
-async function addEntry(){
+function addEntry(){
   const name = nameInput.value.trim();
   const song = songInput.value.trim();
   const score = scoreInput.value;
@@ -404,48 +501,19 @@ async function addEntry(){
     return;
   }
 
-  addBtn.disabled = true;
-  try{
-    const res = await fetch('/api/entries', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({name, song, score: scoreNum})
-    });
-    const data = await res.json();
-    if(!res.ok){
-      formMsg.textContent = data.error === 'limit_reached'
-        ? '上限の20名に達しました。'
-        : '追加に失敗しました。もう一度お試しください。';
-      formMsg.classList.add('limit');
-      entries = data.entries || entries;
-      render();
-      return;
-    }
-    entries = data.entries;
-    nameInput.value = '';
-    songInput.value = '';
-    scoreInput.value = '';
-    nameInput.focus();
-    render();
-    setSyncStatus('同期済み', false);
-  }catch(e){
-    formMsg.textContent = '通信に失敗しました。電波状況を確認して再度お試しください。';
-    formMsg.classList.add('limit');
-    setSyncStatus('サーバーと同期できていません（通信を確認してください）', true);
-  }finally{
-    addBtn.disabled = entries.length >= MAX_ENTRIES;
-  }
+  entries.push({id: nextId++, name, song, score: scoreNum});
+  nameInput.value = '';
+  songInput.value = '';
+  scoreInput.value = '';
+  nameInput.focus();
+  render();
+  persist();
 }
 
-async function removeEntry(id){
-  try{
-    const res = await fetch('/api/entries/' + encodeURIComponent(id), {method: 'DELETE'});
-    const data = await res.json();
-    entries = data.entries || entries;
-    render();
-  }catch(e){
-    setSyncStatus('サーバーと同期できていません（通信を確認してください）', true);
-  }
+function removeEntry(id){
+  entries = entries.filter(e => e.id !== id);
+  render();
+  persist();
 }
 
 addBtn.addEventListener('click', addEntry);
@@ -460,22 +528,13 @@ addBtn.addEventListener('click', addEntry);
 
 resetBtn.addEventListener('click', async () => {
   if(!confirm('全員のデータを削除します。よろしいですか？')) return;
-  try{
-    const res = await fetch('/api/reset', {method: 'POST'});
-    const data = await res.json();
-    entries = data.entries || [];
-    render();
-  }catch(e){
-    setSyncStatus('サーバーと同期できていません（通信を確認してください）', true);
-  }
+  entries = [];
+  nextId = 1;
+  render();
+  await persist();
 });
 
-// 他の端末からの追加・削除を数秒おきに反映する
-// 入力中のテキストボックスはこのポーリングでは触らないので、
-// 入力していても消えたり止まったりしない
-setInterval(loadFromServer, POLL_MS);
-
-loadFromServer();
+load();
 </script>
 </body>
 </html>

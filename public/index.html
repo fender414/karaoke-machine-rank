@@ -77,6 +77,33 @@
     letter-spacing:0.02em;
     text-shadow:0 2px 14px rgba(0,0,0,0.55);
   }
+  .header-right{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .live-badge{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-family:"Rubik",sans-serif;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:0.08em;
+    color:var(--text-muted);
+  }
+  .live-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--gold-bright);
+    box-shadow:0 0 6px rgba(246,185,59,0.8);
+    animation:liveBlink 1.6s ease-in-out infinite;
+  }
+  @keyframes liveBlink{0%,100%{opacity:1;}50%{opacity:0.35;}}
+  @media (prefers-reduced-motion:reduce){
+    .live-dot{animation:none;}
+  }
   .count-badge{
     font-family:"Rubik",sans-serif;
     font-weight:700;
@@ -367,7 +394,10 @@
       <div class="title-eyebrow">つきまち KARAOKE CONTEST</div>
       <h1>カラオケ大会 ランキング</h1>
     </div>
-    <div class="count-badge">出場者 <b id="countNum">0</b> / 20</div>
+    <div class="header-right">
+      <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+      <div class="count-badge">出場者 <b id="countNum">0</b> / 20</div>
+    </div>
   </header>
 
   <div class="entry-panel">
@@ -389,10 +419,12 @@
 </div>
 
 <script>
-const STORAGE_KEY = 'entries';
+const API_BASE = '/api/entries';
+const RESET_URL = '/api/reset';
 const MAX_ENTRIES = 20;
+const POLL_INTERVAL_MS = 4000;
+
 let entries = [];
-let nextId = 1;
 
 const grid = document.getElementById('rankGrid');
 const countNum = document.getElementById('countNum');
@@ -402,28 +434,6 @@ const scoreInput = document.getElementById('scoreInput');
 const addBtn = document.getElementById('addBtn');
 const formMsg = document.getElementById('formMsg');
 const resetBtn = document.getElementById('resetBtn');
-
-function load(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      entries = parsed.entries || [];
-      nextId = parsed.nextId || (entries.length + 1);
-    }
-  }catch(e){
-    entries = [];
-  }
-  render();
-}
-
-function persist(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({entries, nextId}));
-  }catch(e){
-    console.error('保存に失敗しました', e);
-  }
-}
 
 function escapeHtml(str){
   const d = document.createElement('div');
@@ -438,6 +448,11 @@ function tierClass(rank){
   return '';
 }
 
+function setFormMessage(text, isError){
+  formMsg.textContent = text || '';
+  formMsg.classList.toggle('limit', !!isError);
+}
+
 function render(){
   const sorted = entries
     .map((e, idx) => ({...e, _idx: idx}))
@@ -445,12 +460,13 @@ function render(){
 
   countNum.textContent = entries.length;
   addBtn.disabled = entries.length >= MAX_ENTRIES;
-  formMsg.textContent = entries.length >= MAX_ENTRIES ? '上限の20名に達しました。' : '';
-  formMsg.classList.toggle('limit', entries.length >= MAX_ENTRIES);
+  if(entries.length >= MAX_ENTRIES){
+    setFormMessage('上限の20名に達しました。', true);
+  }
 
   if(sorted.length === 0){
     grid.className = 'cols-1';
-    grid.innerHTML = '<div class="empty">まだ出場者がいません。上のフォームから登録してください。</div>';
+    grid.innerHTML = '<div class="empty">まだ出場者がいません。フォームから登録してください。</div>';
     return;
   }
 
@@ -479,41 +495,83 @@ function render(){
   }).join('');
 
   grid.querySelectorAll('.del').forEach(btn => {
-    btn.addEventListener('click', () => removeEntry(Number(btn.dataset.id)));
+    btn.addEventListener('click', () => removeEntry(btn.dataset.id));
   });
 }
 
-function addEntry(){
+// Pull the latest shared list from the server. Used on load, on a timer,
+// and whenever the tab regains focus, so every phone/PC stays in sync.
+async function fetchEntries(){
+  try{
+    const res = await fetch(API_BASE);
+    if(!res.ok) return;
+    const data = await res.json();
+    entries = data.entries || [];
+    render();
+  }catch(e){
+    console.error('取得に失敗しました', e);
+  }
+}
+
+async function addEntry(){
   const name = nameInput.value.trim();
   const song = songInput.value.trim();
   const score = scoreInput.value;
 
   if(entries.length >= MAX_ENTRIES) return;
   if(!name || !song || score === ''){
-    formMsg.textContent = '名前・楽曲名・点数をすべて入力してください。';
-    formMsg.classList.add('limit');
+    setFormMessage('名前・楽曲名・点数をすべて入力してください。', true);
     return;
   }
   const scoreNum = Number(score);
   if(isNaN(scoreNum)){
-    formMsg.textContent = '点数は数字で入力してください。';
-    formMsg.classList.add('limit');
+    setFormMessage('点数は数字で入力してください。', true);
     return;
   }
 
-  entries.push({id: nextId++, name, song, score: scoreNum});
-  nameInput.value = '';
-  songInput.value = '';
-  scoreInput.value = '';
-  nameInput.focus();
-  render();
-  persist();
+  addBtn.disabled = true;
+  try{
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, song, score: scoreNum})
+    });
+    const data = await res.json();
+
+    if(!res.ok){
+      entries = data.entries || entries;
+      if(data.error === 'limit_reached'){
+        setFormMessage('上限の20名に達しました。', true);
+      }else{
+        setFormMessage('入力内容を確認してください。', true);
+      }
+      render();
+      return;
+    }
+
+    entries = data.entries || entries;
+    nameInput.value = '';
+    songInput.value = '';
+    scoreInput.value = '';
+    nameInput.focus();
+    setFormMessage('', false);
+    render();
+  }catch(e){
+    setFormMessage('通信エラーが発生しました。もう一度お試しください。', true);
+  }finally{
+    addBtn.disabled = entries.length >= MAX_ENTRIES;
+  }
 }
 
-function removeEntry(id){
-  entries = entries.filter(e => e.id !== id);
-  render();
-  persist();
+async function removeEntry(id){
+  try{
+    const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {method: 'DELETE'});
+    const data = await res.json();
+    entries = data.entries || entries;
+    render();
+  }catch(e){
+    console.error('削除に失敗しました', e);
+  }
 }
 
 addBtn.addEventListener('click', addEntry);
@@ -528,13 +586,22 @@ addBtn.addEventListener('click', addEntry);
 
 resetBtn.addEventListener('click', async () => {
   if(!confirm('全員のデータを削除します。よろしいですか？')) return;
-  entries = [];
-  nextId = 1;
-  render();
-  await persist();
+  try{
+    const res = await fetch(RESET_URL, {method: 'POST'});
+    const data = await res.json();
+    entries = data.entries || [];
+    render();
+  }catch(e){
+    console.error('リセットに失敗しました', e);
+  }
 });
 
-load();
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible') fetchEntries();
+});
+
+fetchEntries();
+setInterval(fetchEntries, POLL_INTERVAL_MS);
 </script>
 </body>
 </html>

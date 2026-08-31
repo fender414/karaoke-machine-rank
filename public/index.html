@@ -495,8 +495,15 @@ function render(){
   }).join('');
 
   grid.querySelectorAll('.del').forEach(btn => {
-    btn.addEventListener('click', () => removeEntry(btn.dataset.id));
+    btn.addEventListener('click', () => confirmAndRemove(btn.dataset.id));
   });
+}
+
+function confirmAndRemove(id){
+  const target = entries.find(e => e.id === id);
+  const label = target ? `${target.name}さん（♪${target.song}）` : 'このデータ';
+  if(!confirm(`${label}を削除します。\n本当によろしいですか？`)) return;
+  removeEntry(id);
 }
 
 // Pull the latest shared list from the server. Used on load, on a timer,

@@ -21,7 +21,7 @@
     --danger:#e0607a;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;overflow-x:hidden;}
+  html,body{margin:0;padding:0;}
   body{
     min-height:100vh;
     font-family:"Noto Sans JP",sans-serif;
@@ -230,8 +230,7 @@
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    flex:1 1 auto;
-    min-width:0;
+    flex:0 1 auto;
   }
   .row .song{
     font-size:18px;
@@ -240,8 +239,7 @@
     overflow:hidden;
     text-overflow:ellipsis;
     text-align:right;
-    flex:1 1 auto;
-    min-width:0;
+    flex:0 1 auto;
   }
   .row .song::before{content:"♪ ";}
   @media (max-width:560px){

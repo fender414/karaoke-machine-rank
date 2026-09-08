@@ -128,7 +128,7 @@
     backdrop-filter:blur(10px);
   }
   .entry-panel-label{
-    font-size:11px;
+    font-size:22px;
     letter-spacing:0.2em;
     color:var(--gold);
     font-weight:700;
@@ -163,7 +163,7 @@
     outline:none;
     transition:border-color .15s ease, background .15s ease;
   }
-  .entry-form input::placeholder{color:#8b84ab;}
+  .entry-form input::placeholder{color:#8b84ab;font-size:15px;}
   .entry-form input:focus{border-color:var(--gold);background:rgba(0,0,0,0.5);}
   .entry-form input[type="number"]{font-family:"Rubik",sans-serif;font-weight:600;}
   #addBtn{
@@ -173,7 +173,7 @@
     border-radius:10px;
     padding:20px 26px;
     font-weight:800;
-    font-size:15px;
+    font-size:30px;
     cursor:pointer;
     letter-spacing:0.03em;
     transition:filter .15s ease, transform .1s ease;
@@ -405,7 +405,7 @@
     </div>
     <div class="header-right">
       <div class="live-badge"><span class="live-dot"></span>LIVE</div>
-      <div class="count-badge">出場者 <b id="countNum">0</b> / 20</div>
+      <div class="count-badge">出場者 <b id="countNum">0</b> / 25</div>
     </div>
   </header>
 
@@ -430,7 +430,7 @@
 <script>
 const API_BASE = '/api/entries';
 const RESET_URL = '/api/reset';
-const MAX_ENTRIES = 20;
+const MAX_ENTRIES = 25;
 const POLL_INTERVAL_MS = 4000;
 
 let entries = [];
@@ -470,7 +470,7 @@ function render(){
   countNum.textContent = entries.length;
   addBtn.disabled = entries.length >= MAX_ENTRIES;
   if(entries.length >= MAX_ENTRIES){
-    setFormMessage('上限の20名に達しました。', true);
+    setFormMessage('上限の25名に達しました。', true);
   }
 
   if(sorted.length === 0){
@@ -557,7 +557,7 @@ async function addEntry(){
     if(!res.ok){
       entries = data.entries || entries;
       if(data.error === 'limit_reached'){
-        setFormMessage('上限の20名に達しました。', true);
+        setFormMessage('上限の25名に達しました。', true);
       }else{
         setFormMessage('入力内容を確認してください。', true);
       }

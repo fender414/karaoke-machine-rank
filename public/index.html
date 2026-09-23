@@ -35,9 +35,9 @@
     position:fixed;
     inset:0;
     z-index:-2;
-    background-image:url("stage-bg.jpg");
+    background-image:url("neon-bg.jpg");
     background-size:cover;
-    background-position:center top;
+    background-position:center center;
     background-repeat:no-repeat;
   }
   body::after{
@@ -46,8 +46,7 @@
     inset:0;
     z-index:-1;
     background:
-      radial-gradient(ellipse at 50% -10%, rgba(255,190,110,0.18), transparent 55%),
-      linear-gradient(180deg, rgba(10,5,12,0.55) 0%, rgba(10,5,10,0.80) 42%, rgba(8,4,8,0.93) 100%);
+      linear-gradient(180deg, rgba(8,4,16,0.45) 0%, rgba(8,4,16,0.62) 42%, rgba(8,4,16,0.75) 100%);
   }
   .wrap{max-width:1180px;margin:0 auto;}
 
@@ -198,14 +197,14 @@
     display:grid;
     gap:12px;
   }
-  #rankGrid.cols-1{grid-template-columns:1fr;}
-  #rankGrid.cols-2{grid-template-columns:1fr 1fr;}
-  #rankGrid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+  #rankGrid.cols-1{grid-template-columns:minmax(0,1fr);}
+  #rankGrid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #rankGrid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr));}
   @media (max-width:900px){
-    #rankGrid.cols-2,#rankGrid.cols-3{grid-template-columns:1fr 1fr;}
+    #rankGrid.cols-2,#rankGrid.cols-3{grid-template-columns:repeat(2,minmax(0,1fr));}
   }
   @media (max-width:600px){
-    #rankGrid.cols-1,#rankGrid.cols-2,#rankGrid.cols-3{grid-template-columns:1fr;}
+    #rankGrid.cols-1,#rankGrid.cols-2,#rankGrid.cols-3{grid-template-columns:minmax(0,1fr);}
   }
 
   .row{
@@ -248,6 +247,12 @@
     flex:1 1 auto;
   }
   .row .song::before{content:"♪ ";}
+  /* 3列表示（4位以下が多いとき）は横幅が狭いので、名前の下に曲名を置く */
+  #rankGrid.cols-3 .row:not(.first):not(.second):not(.third) .info{
+    flex-direction:column;align-items:flex-start;gap:2px;
+  }
+  #rankGrid.cols-3 .row:not(.first):not(.second):not(.third) .name{flex:0 1 auto;max-width:100%;}
+  #rankGrid.cols-3 .row:not(.first):not(.second):not(.third) .song{font-size:15px;max-width:100%;}
   @media (max-width:560px){
     .row .info{flex-direction:column;align-items:flex-start;gap:2px;}
     .row .name{flex:0 1 auto;}
@@ -405,7 +410,7 @@
     </div>
     <div class="header-right">
       <div class="live-badge"><span class="live-dot"></span>LIVE</div>
-      <div class="count-badge">出場者 <b id="countNum">0</b> / 25</div>
+      <div class="count-badge">出場者 <b id="countNum">0</b> / <span id="maxNum">30</span></div>
     </div>
   </header>
 
@@ -430,7 +435,7 @@
 <script>
 const API_BASE = '/api/entries';
 const RESET_URL = '/api/reset';
-const MAX_ENTRIES = 25;
+const MAX_ENTRIES = 30;
 const POLL_INTERVAL_MS = 4000;
 
 let entries = [];
@@ -470,7 +475,7 @@ function render(){
   countNum.textContent = entries.length;
   addBtn.disabled = entries.length >= MAX_ENTRIES;
   if(entries.length >= MAX_ENTRIES){
-    setFormMessage('上限の25名に達しました。', true);
+    setFormMessage(`上限の${MAX_ENTRIES}名に達しました。`, true);
   }
 
   if(sorted.length === 0){
@@ -557,7 +562,7 @@ async function addEntry(){
     if(!res.ok){
       entries = data.entries || entries;
       if(data.error === 'limit_reached'){
-        setFormMessage('上限の25名に達しました。', true);
+        setFormMessage(`上限の${MAX_ENTRIES}名に達しました。`, true);
       }else{
         setFormMessage('入力内容を確認してください。', true);
       }

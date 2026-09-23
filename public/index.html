@@ -221,13 +221,13 @@
     backdrop-filter:blur(8px) saturate(120%);
   }
 
-  /* name + song sit side by side, song pushed to the right */
+  /* name + song sit side by side; song starts at a fixed column so every row lines up */
   .row .info{
     flex:1;
     min-width:0;
     display:flex;
     align-items:baseline;
-    justify-content:space-between;
+    justify-content:flex-start;
     gap:14px;
   }
   .row .name{
@@ -236,7 +236,7 @@
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    flex:0 1 auto;
+    flex:0 0 40%;   /* 名前の列幅：この%を変えると曲名の開始位置が左右に動きます */
   }
   .row .song{
     font-size:18px;
@@ -244,13 +244,13 @@
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    text-align:right;
-    flex:0 1 auto;
+    text-align:left;
+    flex:1 1 auto;
   }
   .row .song::before{content:"♪ ";}
   @media (max-width:560px){
     .row .info{flex-direction:column;align-items:flex-start;gap:2px;}
-    .row .song{text-align:left;}
+    .row .name{flex:0 1 auto;}
   }
 
   .row .rank{

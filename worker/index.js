@@ -1,6 +1,6 @@
 // worker/index.js
 const KEY = "entries";
-const MAX_ENTRIES = 25;
+const MAX_ENTRIES = 30;
 
 async function getEntries(env) {
   const raw = await env.ENTRIES.get(KEY);

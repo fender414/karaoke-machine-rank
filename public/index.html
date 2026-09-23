@@ -255,6 +255,7 @@
   @media (max-width:560px){
     .row .info{flex-direction:column;align-items:flex-start;gap:2px;}
     .row .name{flex:0 1 auto;}
+    .row .name,.row .song{max-width:100%;}  /* 文字が点数の上にはみ出さないように */
   }
 
   .row .rank{
@@ -355,6 +356,23 @@
   .row.third .name{font-size:25px;}
   .row.third .song{font-size:21px;}
   .row.third .score{font-size:36px;color:var(--bronze-bright);min-width:96px;}
+
+  /* スマホ（幅560px以下）では1〜3位の文字・メダル・余白を小さくする */
+  @media (max-width:560px){
+    .row{gap:10px;padding:12px 12px;}
+    .row .score{font-size:24px;min-width:0;}
+    .row.first,.row.second,.row.third{padding:14px 12px;min-height:0;}
+    .row.first .medal{width:40px;height:40px;font-size:19px;}
+    .row.second .medal,.row.third .medal{width:34px;height:34px;font-size:16px;}
+    .row.first .name{font-size:22px;}
+    .row.second .name,.row.third .name{font-size:19px;}
+    .row.first .song{font-size:16px;}
+    .row.second .song,.row.third .song{font-size:15px;}
+    .row .song{font-size:14px;}
+    .row.first .score{font-size:30px;min-width:0;}
+    .row.second .score,.row.third .score{font-size:26px;min-width:0;}
+    .row .del{padding:4px 2px;}
+  }
 
   @keyframes glowGold{
     0%,100%{box-shadow:0 0 0 1px rgba(246,185,59,0.15), 0 0 28px rgba(246,185,59,0.22);}

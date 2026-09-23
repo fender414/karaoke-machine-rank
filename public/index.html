@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Rubik:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --card-bg:rgba(28,25,46,0.72);
+    --card-bg:#0b0a10;   /* ランキングの枠の色（黒で塗りつぶし） */
     --card-border:rgba(122,113,163,0.35);
     --gold:#f6b93b;
     --gold-bright:#ffd876;
@@ -217,7 +217,6 @@
     border-radius:12px;
     padding:14px 16px;
     min-height:70px;
-    backdrop-filter:blur(8px) saturate(120%);
   }
 
   /* name + song sit side by side; song starts at a fixed column so every row lines up */
@@ -308,7 +307,7 @@
 
   /* 1st place */
   .row.first{
-    background:linear-gradient(135deg, rgba(246,185,59,0.22), rgba(28,25,46,0.78));
+    background:linear-gradient(135deg, rgba(246,185,59,0.22), transparent 60%), var(--card-bg);
     border:1px solid var(--gold);
     padding:22px 24px;
     min-height:96px;
@@ -325,7 +324,7 @@
 
   /* 2nd place */
   .row.second{
-    background:linear-gradient(135deg, rgba(199,210,224,0.16), rgba(28,25,46,0.78));
+    background:linear-gradient(135deg, rgba(199,210,224,0.16), transparent 60%), var(--card-bg);
     border:1px solid var(--silver);
     padding:19px 22px;
     min-height:86px;
@@ -342,7 +341,7 @@
 
   /* 3rd place */
   .row.third{
-    background:linear-gradient(135deg, rgba(217,136,78,0.18), rgba(28,25,46,0.78));
+    background:linear-gradient(135deg, rgba(217,136,78,0.18), transparent 60%), var(--card-bg);
     border:1px solid var(--bronze);
     padding:19px 22px;
     min-height:86px;

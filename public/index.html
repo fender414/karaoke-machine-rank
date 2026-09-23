@@ -192,6 +192,24 @@
   }
   .form-msg.limit{color:var(--danger);}
 
+  /* 追加/更新ボタンとキャンセルボタン */
+  .form-actions{display:flex;flex-direction:column;gap:6px;}
+  #addBtn{flex:1;}
+  #cancelEditBtn{
+    background:rgba(0,0,0,0.35);
+    border:1px solid var(--card-border);
+    color:var(--text-muted);
+    border-radius:10px;
+    padding:8px 12px;
+    font-size:15px;
+    font-family:inherit;
+    cursor:pointer;
+  }
+  #cancelEditBtn[hidden]{display:none;}
+  #cancelEditBtn:hover{color:var(--text-primary);border-color:var(--text-muted);}
+  /* 編集モード中は入力パネルを金色の枠で強調 */
+  .entry-panel.is-editing{border-color:var(--gold);box-shadow:0 0 0 2px rgba(246,185,59,0.35), 0 10px 30px rgba(0,0,0,0.35);}
+
   /* Ranking grid */
   #rankGrid{
     display:grid;
@@ -289,6 +307,24 @@
     transition:color .15s ease, background .15s ease;
   }
   .row .del:hover{color:var(--danger);background:rgba(224,96,122,0.15);}
+  /* 編集ボタン（✎） */
+  .row .edit{
+    flex-shrink:0;
+    background:transparent;
+    border:none;
+    color:#8b84ab;
+    font-size:17px;
+    cursor:pointer;
+    padding:4px 6px;
+    line-height:1;
+    border-radius:6px;
+    transition:color .15s ease, background .15s ease;
+  }
+  .row .edit:hover{color:var(--gold-bright);background:rgba(246,185,59,0.15);}
+  /* 未採点の表示 */
+  .row .score.pending{font-family:"Noto Sans JP",sans-serif;font-size:15px;font-weight:700;color:#8b84ab;}
+  /* 編集中の行 */
+  .row.editing{outline:2px dashed var(--gold);outline-offset:2px;}
 
   /* Medal badge for top 3 */
   .medal{
@@ -371,7 +407,7 @@
     .row .song{font-size:14px;}
     .row.first .score{font-size:30px;min-width:0;}
     .row.second .score,.row.third .score{font-size:26px;min-width:0;}
-    .row .del{padding:4px 2px;}
+    .row .del,.row .edit{padding:4px 2px;}
   }
 
   @keyframes glowGold{
@@ -432,12 +468,15 @@
   </header>
 
   <div class="entry-panel">
-    <div class="entry-panel-label">受付入力</div>
+    <div class="entry-panel-label" id="panelLabel">受付入力</div>
     <div class="entry-form">
       <input type="text" id="nameInput" placeholder="名前（例：つきまち太郎）" maxlength="30">
       <input type="text" id="songInput" placeholder="楽曲名（例：いとしのエリー）" maxlength="60">
-      <input type="number" id="scoreInput" placeholder="点数" min="0" max="10000" step="1">
-      <button id="addBtn">追加する</button>
+      <input type="number" id="scoreInput" placeholder="点数（あとでもOK）" min="0" max="10000" step="1">
+      <div class="form-actions">
+        <button id="addBtn">追加する</button>
+        <button id="cancelEditBtn" type="button" hidden>キャンセル</button>
+      </div>
     </div>
     <div class="form-msg" id="formMsg"></div>
   </div>
@@ -456,6 +495,7 @@ const MAX_ENTRIES = 30;
 const POLL_INTERVAL_MS = 4000;
 
 let entries = [];
+let editingId = null;   // 編集中の出場者のID（null なら新規追加モード）
 
 const grid = document.getElementById('rankGrid');
 const countNum = document.getElementById('countNum');
@@ -463,6 +503,9 @@ const nameInput = document.getElementById('nameInput');
 const songInput = document.getElementById('songInput');
 const scoreInput = document.getElementById('scoreInput');
 const addBtn = document.getElementById('addBtn');
+const cancelEditBtn = document.getElementById('cancelEditBtn');
+const panelLabel = document.getElementById('panelLabel');
+const entryPanel = document.querySelector('.entry-panel');
 const formMsg = document.getElementById('formMsg');
 const resetBtn = document.getElementById('resetBtn');
 
@@ -470,6 +513,10 @@ function escapeHtml(str){
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+function hasScore(e){
+  return e.score !== null && e.score !== undefined && e.score !== '';
 }
 
 function tierClass(rank){
@@ -484,14 +531,27 @@ function setFormMessage(text, isError){
   formMsg.classList.toggle('limit', !!isError);
 }
 
+function updateAddButton(){
+  // 編集中は上限に関係なく押せる。新規追加は上限に達したら押せない
+  addBtn.disabled = !editingId && entries.length >= MAX_ENTRIES;
+}
+
 function render(){
-  const sorted = entries
-    .map((e, idx) => ({...e, _idx: idx}))
-    .sort((a,b) => b.score - a.score || a._idx - b._idx);
+  // 点数あり → 点数の高い順。点数なし（未採点）→ その後ろに登録順
+  const withIdx = entries.map((e, idx) => ({...e, _idx: idx}));
+  const scored = withIdx.filter(hasScore).sort((a,b) => b.score - a.score || a._idx - b._idx);
+  const unscored = withIdx.filter(e => !hasScore(e));
+  const sorted = scored.concat(unscored);
+
+  // 編集中の人が別の端末で削除された場合は編集モードを抜ける
+  if(editingId && !entries.some(e => e.id === editingId)){
+    exitEditMode();
+    setFormMessage('編集中の出場者が削除されました。', true);
+  }
 
   countNum.textContent = entries.length;
-  addBtn.disabled = entries.length >= MAX_ENTRIES;
-  if(entries.length >= MAX_ENTRIES){
+  updateAddButton();
+  if(!editingId && entries.length >= MAX_ENTRIES){
     setFormMessage(`上限の${MAX_ENTRIES}名に達しました。`, true);
   }
 
@@ -502,38 +562,80 @@ function render(){
   }
 
   // column count is based on the 4th place and below, since 1st-3rd are always full width
-  const restCount = Math.max(0, sorted.length - 3);
+  const topCount = Math.min(3, scored.length);
+  const restCount = Math.max(0, sorted.length - topCount);
   const cols = restCount <= 7 ? 1 : (restCount <= 14 ? 2 : 3);
   grid.className = 'cols-' + cols;
 
   grid.innerHTML = sorted.map((e, i) => {
+    const scoredRow = hasScore(e);
     const rank = i + 1;
-    const tier = tierClass(rank);
+    const tier = scoredRow ? tierClass(rank) : '';
     const rankMarkup = tier
       ? `<div class="medal">${rank}</div>`
-      : `<div class="rank">${rank}</div>`;
+      : `<div class="rank">${scoredRow ? rank : '–'}</div>`;
+    const scoreMarkup = scoredRow
+      ? `<div class="score">${e.score}</div>`
+      : `<div class="score pending">未採点</div>`;
+    const editingCls = e.id === editingId ? ' editing' : '';
     return `
-      <div class="row ${tier}" data-id="${e.id}">
+      <div class="row ${tier}${editingCls}" data-id="${e.id}">
         ${rankMarkup}
         <div class="info">
           <div class="name">${escapeHtml(e.name)}</div>
           <div class="song">${escapeHtml(e.song)}</div>
         </div>
-        <div class="score">${e.score}</div>
+        ${scoreMarkup}
+        <button class="edit" data-id="${e.id}" title="編集">✎</button>
         <button class="del" data-id="${e.id}" title="削除">✕</button>
       </div>
     `;
   }).join('');
 
+  grid.querySelectorAll('.edit').forEach(btn => {
+    btn.addEventListener('click', () => startEdit(btn.dataset.id));
+  });
   grid.querySelectorAll('.del').forEach(btn => {
     btn.addEventListener('click', () => confirmAndRemove(btn.dataset.id));
   });
+}
+
+// ✎ を押したとき：上の入力欄にその人の内容を入れて「編集モード」にする
+function startEdit(id){
+  const target = entries.find(e => e.id === id);
+  if(!target) return;
+  editingId = id;
+  nameInput.value = target.name;
+  songInput.value = target.song;
+  scoreInput.value = hasScore(target) ? target.score : '';
+  panelLabel.textContent = `編集中：${target.name}さん`;
+  addBtn.textContent = '更新する';
+  cancelEditBtn.hidden = false;
+  entryPanel.classList.add('is-editing');
+  setFormMessage('', false);
+  updateAddButton();
+  render();
+  entryPanel.scrollIntoView({behavior:'smooth', block:'start'});
+  scoreInput.focus({preventScroll:true});
+}
+
+function exitEditMode(){
+  editingId = null;
+  nameInput.value = '';
+  songInput.value = '';
+  scoreInput.value = '';
+  panelLabel.textContent = '受付入力';
+  addBtn.textContent = '追加する';
+  cancelEditBtn.hidden = true;
+  entryPanel.classList.remove('is-editing');
+  updateAddButton();
 }
 
 function confirmAndRemove(id){
   const target = entries.find(e => e.id === id);
   const label = target ? `${target.name}さん（♪${target.song}）` : 'このデータ';
   if(!confirm(`${label}を削除します。\n本当によろしいですか？`)) return;
+  if(id === editingId) exitEditMode();
   removeEntry(id);
 }
 
@@ -551,28 +653,34 @@ async function fetchEntries(){
   }
 }
 
-async function addEntry(){
+// 「追加する」「更新する」ボタンを押したときだけ送信する（Enterキーでは送信しない）
+async function submitEntry(){
   const name = nameInput.value.trim();
   const song = songInput.value.trim();
-  const score = scoreInput.value;
+  const scoreText = scoreInput.value.trim();
 
-  if(entries.length >= MAX_ENTRIES) return;
-  if(!name || !song || score === ''){
-    setFormMessage('名前・楽曲名・点数をすべて入力してください。', true);
+  if(!editingId && entries.length >= MAX_ENTRIES) return;
+  if(!name || !song){
+    setFormMessage('名前と楽曲名を入力してください（点数はあとからでもOK）。', true);
     return;
   }
-  const scoreNum = Number(score);
-  if(isNaN(scoreNum)){
-    setFormMessage('点数は数字で入力してください。', true);
-    return;
+  let score = null;
+  if(scoreText !== ''){
+    score = Number(scoreText);
+    if(isNaN(score)){
+      setFormMessage('点数は数字で入力してください。', true);
+      return;
+    }
   }
 
+  const isEdit = !!editingId;
+  const url = isEdit ? `${API_BASE}/${encodeURIComponent(editingId)}` : API_BASE;
   addBtn.disabled = true;
   try{
-    const res = await fetch(API_BASE, {
-      method: 'POST',
+    const res = await fetch(url, {
+      method: isEdit ? 'PUT' : 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({name, song, score: scoreNum})
+      body: JSON.stringify({name, song, score})
     });
     const data = await res.json();
 
@@ -580,6 +688,9 @@ async function addEntry(){
       entries = data.entries || entries;
       if(data.error === 'limit_reached'){
         setFormMessage(`上限の${MAX_ENTRIES}名に達しました。`, true);
+      }else if(data.error === 'not_found'){
+        exitEditMode();
+        setFormMessage('この出場者はすでに削除されています。', true);
       }else{
         setFormMessage('入力内容を確認してください。', true);
       }
@@ -588,16 +699,21 @@ async function addEntry(){
     }
 
     entries = data.entries || entries;
-    nameInput.value = '';
-    songInput.value = '';
-    scoreInput.value = '';
-    nameInput.focus();
-    setFormMessage('', false);
+    if(isEdit){
+      exitEditMode();
+      setFormMessage('更新しました。', false);
+    }else{
+      nameInput.value = '';
+      songInput.value = '';
+      scoreInput.value = '';
+      nameInput.focus();
+      setFormMessage(score === null ? '未採点で登録しました。点数は ✎ からあとで入力できます。' : '', false);
+    }
     render();
   }catch(e){
     setFormMessage('通信エラーが発生しました。もう一度お試しください。', true);
   }finally{
-    addBtn.disabled = entries.length >= MAX_ENTRIES;
+    updateAddButton();
   }
 }
 
@@ -612,14 +728,11 @@ async function removeEntry(id){
   }
 }
 
-addBtn.addEventListener('click', addEntry);
-[nameInput, songInput, scoreInput].forEach(inp => {
-  inp.addEventListener('keydown', (ev) => {
-    if(ev.key === 'Enter'){
-      ev.preventDefault();
-      addEntry();
-    }
-  });
+addBtn.addEventListener('click', submitEntry);
+cancelEditBtn.addEventListener('click', () => {
+  exitEditMode();
+  setFormMessage('', false);
+  render();
 });
 
 resetBtn.addEventListener('click', async () => {
@@ -628,6 +741,7 @@ resetBtn.addEventListener('click', async () => {
     const res = await fetch(RESET_URL, {method: 'POST'});
     const data = await res.json();
     entries = data.entries || [];
+    exitEditMode();
     render();
   }catch(e){
     console.error('リセットに失敗しました', e);
